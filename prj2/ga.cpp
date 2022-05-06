@@ -5,17 +5,20 @@
 #include <time.h>
 #include <sys/time.h>
 
+#define STOC(X) X - 1
+#define CTOS(X) X + 1
+
 using namespace std;
 
 struct EDGE{
-    int a;
-    int b;
+    struct VERT * a;
+    struct VERT * b;
+    int w;
 };
 
 struct VERT{
     int vert_id;
-    int n_edge;
-    int * edge_ls;
+    int vert_grp;
 };
 
 struct EL{
@@ -66,28 +69,34 @@ void initialization(struct EL *elem, int n_bits){
 }
 
 
-int evaluate(int*x, int*y, int n){
-    int sz = n*8;
-    int sc;
-    int t[sz];
-    int temp[8];
-    int s[8] = {1,1,1,1,1,1,1,1};
-    for(int i = 0; i<sz; i++){
-        t[i] = (x[i] == y[i]);
-    }
+int evaluate(int*bitstring, int n_bits, int n_edge, struct VERT * l_v, struct EDGE * l_e){
     int score = 0;
-    for(int i = 0; i<n; i++){
-        if (i%2 == 0)
-            sc = 5;
-        else
-            sc = 8;
-        for (int j = 0; j<8; j++) 
-            temp[j] = t[i*8 + j];
-        if(compare_ls(temp, s, 8)){
-            score = score + sc;
+    for(int i=0; i<n_bits; i++){
+        l_v[i].vert_grp = bitstring[i];
+    }
+    for(int i=0; i<n_edge; i++){
+        int a_grp = l_e[i].a->vert_grp;
+        int b_grp = l_e[i].b->vert_grp;
+        if(a_grp == b_grp){
+          continue;
+        }
+        else{
+          if(a_grp > 1 or b_grp > 1)
+              cout<< a_grp << " " << b_grp << endl;
+          score = score + l_e[i].w;
         }
     }
-   return score;
+    return score;
+}
+
+void evaluate_el(struct EL * el, int n_bits, int n_edge, struct VERT * l_v, struct EDGE * l_e){
+    el->score = evaluate(el->bitstring, n_bits, n_edge, l_v, l_e);
+}
+
+void evaluate_all(struct EL * pop, int n_bits, int n_edge, struct VERT * l_v, struct EDGE * l_e, int n_pop){
+    for(int i = 0; i <n_pop; i++){
+        evaluate_el(&pop[i], n_bits, n_edge, l_v, l_e);
+    }
 }
 
 int select(struct EL * pop, int n_pop, int k){
@@ -122,17 +131,8 @@ void crossover(struct EL * p1, struct EL * p2, struct EL * result, float r_cross
     result[1].bitstring = c2_ptr;
 }
 
-void evaluate_el(struct EL * el, int*y, int n){
-    el->score = evaluate(el->bitstring, y, n);
-}
 
-void evaluate_all(struct EL * pop, int*y, int n, int n_pop){
-    for(int i = 0; i <n_pop; i++){
-        evaluate_el(&pop[i], y, n);
-    }
-}
-
-float get_highest_idx(struct EL * pop, int n_pop){
+int get_highest_idx(struct EL * pop, int n_pop){
     float highest_score = 0;
     int idx = 0;
     for(int i = 0; i <n_pop; i++){
@@ -144,6 +144,7 @@ float get_highest_idx(struct EL * pop, int n_pop){
     }
     return idx;
 }
+
 float get_average_score(struct EL * pop, int n_pop){
     float total_score = 0;
     for(int i = 0; i <n_pop; i++){
@@ -152,7 +153,8 @@ float get_average_score(struct EL * pop, int n_pop){
     return float(total_score/n_pop);
 }
 
-struct EL genetic_algorithm(int n_bits, int n_iter, int n_population, float r_cross, float r_mutation, int n, int y[], int k){
+struct EL genetic_algorithm(struct VERT * vert_ls, struct EDGE * edge_ls, int n_vert, int n_edge,
+                            int n_iter, int n_population, float r_cross, float r_mutation, int k){
     time_t start, end;
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -164,7 +166,7 @@ struct EL genetic_algorithm(int n_bits, int n_iter, int n_population, float r_cr
     //cout<<"n_pop: "<<n_population<<endl;
     //Initialize population
     for (int i = 0; i<n_population; i++){
-        initialization(&pop[i],n_bits);
+        initialization(&pop[i],n_vert);
     }
 
     for(int gen = 0; gen<n_iter; gen++){
@@ -174,9 +176,16 @@ struct EL genetic_algorithm(int n_bits, int n_iter, int n_population, float r_cr
             //cout<<"TIMEOVER"<<endl;
             break;
         }
-        evaluate_all(pop, y, n, n_population);
-        //if(gen%10==0)cout<<"gen: "<<gen<<" score: "<<get_highest_score(pop,n_population)<<endl;
-        
+        evaluate_all(pop, n_vert, n_edge, vert_ls, edge_ls, n_population);
+        if(gen%1000==0){
+          int h_idx;
+          h_idx = get_highest_idx(pop,n_population);
+          cout<<"gen: "<<gen<<" score: "<<pop[h_idx].score<<endl;
+          for(int i =0; i<n_vert; i++){
+              cout<<pop[h_idx].bitstring[i];
+          }
+          cout<<endl;
+        }
         //select parents
         int parent_idx[n_population];
         struct EL children[n_population];
@@ -188,9 +197,9 @@ struct EL genetic_algorithm(int n_bits, int n_iter, int n_population, float r_cr
             struct EL p1 = pop[parent_idx[i]];
             struct EL p2 = pop[parent_idx[i+1]];
             struct EL two_childrens[2];
-            crossover(&p1, &p2, two_childrens, r_cross, n_bits);
+            crossover(&p1, &p2, two_childrens, r_cross, n_vert);
             for(int j = 0; j < 2; j++){
-                mutation(&two_childrens[j],r_mutation,n_bits);
+                mutation(&two_childrens[j],r_mutation,n_vert);
                 children[i+j] = two_childrens[j];
             }
         }
@@ -199,46 +208,63 @@ struct EL genetic_algorithm(int n_bits, int n_iter, int n_population, float r_cr
         }
         pop = children;
     }
-    evaluate_all(pop, y, n, n_population);
+    evaluate_all(pop, n_vert, n_edge, vert_ls, edge_ls, n_population);
     int highest_idx = get_highest_idx(pop, n_population);
     struct EL * highest_elem = &pop[highest_idx];
     cout<<highest_elem->score<<" ";
-    for(int i =0; i<n_bits; i++){
+    for(int i =0; i<n_vert; i++){
         cout<<highest_elem->bitstring[i];
     }
 }
+
 
 int main(int argc, char**argv) {
     srand(time(NULL));
 
     //input n, y
-    string n_in, y_in;
+    string n_vert_s, n_edge_s;
 
-    cin >> n_in;
-    cin >> y_in;
+    cin >> n_vert_s;
+    cin >> n_edge_s;
     //
-    int n;
-    stringstream ssInt(n_in);
-    ssInt >> n;
+    int n_vert, n_edge;
+    //stringstream ssInt(n_in);
+    //ssInt >> n_vert;
+    n_vert = stoi(n_vert_s);
+    n_edge = stoi(n_edge_s);
 
-    int n_bits = n*8;
-    int n_iter = 99999;
-    int n_population = n_bits * 10;
+    int n_bits = n_vert;
+    int n_iter = 5;
+    int n_population = 2;
     float r_cross = 0.8;
     float r_mutation = 1 / float(n_bits);
-    int y[n_bits];
     int k = 4;
 
-    for (int i =0; i<n_bits; i++){
-        y[i] = ctoi(y_in[i]);
+    //struct EDGE and VERTs
+    string tmp_a, tmp_b, tmp_w;
+    struct EDGE edge_ls[n_edge];
+    struct VERT vert_ls[n_vert];
+    
+    for(int i =0; i<n_vert; i++){
+        vert_ls[i].vert_id=CTOS(i);
+        vert_ls[i].vert_grp=-1;
     }
-
-    //for (int i =0; i<n_bits; i++){
-    //    cout<<y[i];
+    for(int i =0; i<n_edge; i++){
+        cin >> tmp_a;
+        cin >> tmp_b;
+        cin >> tmp_w;
+        edge_ls[i].a = &vert_ls[STOC(stoi(tmp_a))];
+        edge_ls[i].b = &vert_ls[STOC(stoi(tmp_b))];
+        edge_ls[i].w = stoi(tmp_w);
+    }
+    //int *c1_ptr = (int*)malloc(n_bits * sizeof(int));
+    //cout<<n_vert<<" "<<n_edge<<endl;
+    //for (int i =0; i<n_edge; i++){
+    //    cout<<edge_ls[i].a->vert_id<<" ";
+    //    cout<<edge_ls[i].b->vert_id<<" ";
+    //    cout<<edge_ls[i].w<<endl;
     //}
-    //cout<<endl;
-    //n = 1;
 
-    genetic_algorithm(n_bits,n_iter,n_population,r_cross,r_mutation,n,y,k); 
+    genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k); 
 
 }
