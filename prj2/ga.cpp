@@ -221,7 +221,7 @@ struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_
     // cout<<highest_elem->score<<" ";
     for(int i =0; i<n_vert; i++){
         if(highest_elem->bitstring[i] == 1){
-            cout << i << " ";
+            cout << i+1 << " ";
         }
         // cout<<highest_elem->bitstring[i];
     }
