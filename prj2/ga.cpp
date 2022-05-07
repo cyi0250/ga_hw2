@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <time.h>
 #include <sys/time.h>
+#include <fstream>
 
 #define STOC(X) X - 1
 #define CTOS(X) X + 1
@@ -265,14 +266,38 @@ int main(int argc, char**argv) {
         edge_ls[i].w = stoi(tmp_w);
     }
 
-    genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k);
-    
-    // int idx_unweighted_50[] = {1 ,4, 5, 6, 8, 10,11, 12, 14, 15, 17, 21, 22, 23, 27, 28, 29, 30, 31, 34, 37, 39, 46, 48, 50};
-    // int sol_unweighted_50[50];
-    // for(int i=0; i<sizeof(idx_unweighted_50)/sizeof(*idx_unweighted_50); i++){
-    //     int sol_idx = STOC(idx_unweighted_50[i]);
-    //     sol_unweighted_50[sol_idx] = 1;
-    // }
-    // int sol_score = evaluate(sol_unweighted_50,n_vert,n_edge,vert_ls,edge_ls);
-    // cout<<"OPTIMIZED SCORE: "<<sol_score<<endl;
+    //genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k);
+
+    ifstream fin("./proj2_sample_sol/sol_weighted_chimera_297.txt");
+
+    int *idx = (int*)malloc(sizeof(int)*512);
+    int count = 0;
+
+    while(!fin.eof()){    
+        int vertex;
+        fin >> vertex;
+        idx[count] = vertex;
+        count++;
+    }
+    count--;    
+
+    cout << count << endl;
+
+    idx = (int*)realloc(idx, sizeof(int)*count);
+    int sol[297] = {0, };
+    for(int i = 0; i < count; i++){
+        int sol_idx = idx[i];
+        sol[sol_idx] = 1;    
+    }
+    int sol_score = evaluate(sol, n_vert, n_edge, vert_ls, edge_ls);
+
+    /* int idx_unweighted_50[] = {1 ,4, 5, 6, 8, 10,11, 12, 14, 15, 17, 21, 22, 23, 27, 28, 29, 30, 31, 34, 37, 39, 46, 48, 50};
+    int sol_unweighted_50[50] = {0, };
+    for(int i=0; i<sizeof(idx_unweighted_50)/sizeof(*idx_unweighted_50); i++){
+        int sol_idx = STOC(idx_unweighted_50[i]);
+        sol_unweighted_50[sol_idx] = 1;
+    }
+    int sol_score = evaluate(sol_unweighted_50,n_vert,n_edge,vert_ls,edge_ls);*/
+
+    cout<<"OPTIMIZED SCORE: "<<sol_score<<endl;
 }
