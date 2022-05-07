@@ -136,7 +136,7 @@ void crossover(struct EL * p1, struct EL * p2, struct EL * result, float r_cross
 
 
 int get_highest_idx(struct EL * pop, int n_pop){
-    float highest_score = 0;
+    float highest_score = pop[0].score;
     int idx = 0;
     for(int i = 0; i <n_pop; i++){
         float tmp_score = pop[i].score;
@@ -218,12 +218,9 @@ struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_
     evaluate_all(pop, n_vert, n_edge, vert_ls, edge_ls, n_population);
     int highest_idx = get_highest_idx(pop, n_population);
     struct EL * highest_elem = &pop[highest_idx];
-    // cout<<highest_elem->score<<" ";
+    cout<<highest_elem->score<<" ";
     for(int i =0; i<n_vert; i++){
-        if(highest_elem->bitstring[i] == 1){
-            cout << i+1 << " ";
-        }
-        // cout<<highest_elem->bitstring[i];
+        cout<<highest_elem->bitstring[i];
     }
     cout<<endl;
 
@@ -251,12 +248,13 @@ int main(int argc, char**argv) {
     int n_bits = n_vert;
     int n_iter = 9999999;
     int n_population = 2000;
-    float r_cross = 0.8;
+    float r_cross = 0.9;
     float r_mutation = 1 / float(n_bits);
-    if (r_mutation > 0.03)
-        r_mutation = 0.03;
     int k = 4;
     int kpoint = n_vert/50;
+
+    if (r_mutation > 0.03)
+        r_mutation = 0.03;
     if (kpoint < 1)
         kpoint = 1;
 
@@ -278,8 +276,8 @@ int main(int argc, char**argv) {
         edge_ls[i].w = stoi(tmp_w);
     }
 
-    // for(int i = 0; i < 30; i++) 
-    genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k, kpoint);
+    for(int i = 0; i < 30; i++) 
+        genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k, kpoint);
  
     /*ifstream fin("./proj2_sample_sol/sol_unweighted_50.txt");
 
