@@ -62,7 +62,6 @@ void mutation(struct EL *el, float r_mutation, int n_bits){
 
 void initialization(struct EL *elem, int n_bits){
     int *ptr = new int[n_bits];
-    //int *ptr = (int*)malloc(n_bits * sizeof(int));
     for (int i = 0; i < n_bits; i++){
         ptr[i] = rand0or1();
     }
@@ -111,9 +110,7 @@ int select(struct EL * pop, int n_pop, int k){
     return sel_idx;
 }
 
-void crossover(struct EL * p1, struct EL * p2, struct EL * result, float r_cross, int n_bits){
-    //int *c1_ptr = (int*)malloc(n_bits * sizeof(int));
-    //int *c2_ptr = (int*)malloc(n_bits * sizeof(int));
+void crossover(struct EL * p1, struct EL * p2, struct EL * result, float r_cross, int n_bits, int kpoint){
     int *c1_ptr = new int[n_bits];
     int *c2_ptr = new int[n_bits];
     
@@ -121,18 +118,16 @@ void crossover(struct EL * p1, struct EL * p2, struct EL * result, float r_cross
         c1_ptr[i] = p1->bitstring[i];
         c2_ptr[i] = p2->bitstring[i];
     }
-
-    int k = 2;
-    int i = 0;
+    int j = 0;
 
     if (rand0to1() < r_cross){
-        while(i < k){
+        while(j < kpoint){
             int pt = (rand()%(n_bits-1))+1;
             for(int i = 0; i < pt; i++){
                 c1_ptr[i] = p2->bitstring[i];
                 c2_ptr[i] = p1->bitstring[i];
             }
-            i++;
+            j++;
         }
     }
     result[0].bitstring = c1_ptr;
@@ -162,7 +157,7 @@ float get_average_score(struct EL * pop, int n_pop){
 }
 
 struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_vert, int n_edge,
-                            int n_iter, int n_population, float r_cross, float r_mutation, int k){
+                            int n_iter, int n_population, float r_cross, float r_mutation, int k, int kpoint){
     time_t start, end;
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -171,7 +166,7 @@ struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_
     struct EL * pop;
     struct EL * init = new struct EL[n_population];
     pop = init;
-    //cout<<"n_pop: "<<n_population<<endl;
+
     //Initialize population
     for (int i = 0; i<n_population; i++){
         initialization(&pop[i],n_vert);
@@ -204,19 +199,20 @@ struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_
         for(int i = 0; i < n_population; i=i+2){
             struct EL *p1 = &pop[parent_idx[i]];
             struct EL *p2 = &pop[parent_idx[i+1]];
-            //struct EL *two_childrens = new struct EL[2];
-            crossover(p1, p2, &children[i], r_cross, n_vert);
+            crossover(p1, p2, &children[i], r_cross, n_vert, kpoint);
             for(int j = 0; j < 2; j++){
                 mutation(&children[i+j],r_mutation,n_vert);
-                //children[i+j] = two_childrens[j];
             }
-            //delete []two_childrens;
         }
+
+        //delete heap allocated mem
         for(int i =0; i<n_population; i++){
             delete[](pop[i].bitstring);
             pop[i].bitstring = NULL;
         }
         delete[] pop;
+
+        //replacement
         pop = children;
     }
     evaluate_all(pop, n_vert, n_edge, vert_ls, edge_ls, n_population);
@@ -227,6 +223,8 @@ struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_
         cout<<highest_elem->bitstring[i];
     }
     cout<<endl;
+
+    //delete heap allocated variables
     for(int i =0; i<n_population; i++){
         delete[](pop[i].bitstring);
         pop[i].bitstring = NULL;
@@ -249,10 +247,15 @@ int main(int argc, char**argv) {
 
     int n_bits = n_vert;
     int n_iter = 9999999;
-    int n_population = 1000;
-    float r_cross = 0.9;
+    int n_population = 2000;
+    float r_cross = 0.8;
     float r_mutation = 1 / float(n_bits);
+    if (r_mutation > 0.03)
+        r_mutation = 0.03;
     int k = 4;
+    int kpoint = n_vert/50;
+    if (kpoint < 1)
+        kpoint = 1;
 
     //struct EDGE and VERTs
     string tmp_a, tmp_b, tmp_w;
@@ -273,7 +276,7 @@ int main(int argc, char**argv) {
     }
 
     for(int i = 0; i < 30; i++) 
-        genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k);
+        genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k, kpoint);
  
     /*ifstream fin("./proj2_sample_sol/sol_unweighted_50.txt");
 
