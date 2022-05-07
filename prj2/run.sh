@@ -1,7 +1,7 @@
 echo ""
 echo "Copy an instance to maxcut.in file."
 echo "cp input/unweighted_to.txt maxcut.in"
-cp input/unweighted_50.txt maxcut.in
+cp input/unweighted_500.txt maxcut.in
 
 echo ""
 echo "make all"

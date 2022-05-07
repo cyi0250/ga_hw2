@@ -122,11 +122,17 @@ void crossover(struct EL * p1, struct EL * p2, struct EL * result, float r_cross
         c2_ptr[i] = p2->bitstring[i];
     }
 
+    int k = 2;
+    int i = 0;
+
     if (rand0to1() < r_cross){
-        int pt = (rand()%(n_bits-1))+1;
-        for(int i = 0; i< pt; i++){
-            c1_ptr[i] = p2->bitstring[i];
-            c2_ptr[i] = p1->bitstring[i];
+        while(i < k){
+            int pt = (rand()%(n_bits-1))+1;
+            for(int i = 0; i < pt; i++){
+                c1_ptr[i] = p2->bitstring[i];
+                c2_ptr[i] = p1->bitstring[i];
+            }
+            i++;
         }
     }
     result[0].bitstring = c1_ptr;
@@ -266,32 +272,33 @@ int main(int argc, char**argv) {
         edge_ls[i].w = stoi(tmp_w);
     }
 
-    genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k);
+    for(int i = 0; i < 30; i++) 
+        genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k);
+ 
+    /*ifstream fin("./proj2_sample_sol/sol_unweighted_50.txt");
 
-    // ifstream fin("./proj2_sample_sol/sol_unweighted_500.txt");
+    int *idx = (int*)malloc(sizeof(int)*512);
+    int count = 0;
 
-    // int *idx = (int*)malloc(sizeof(int)*512);
-    // int count = 0;
+    while(!fin.eof()){    
+        int vertex;
+        fin >> vertex;
+        idx[count] = vertex;
+        count++;
+    }
+    count = count - 1;
+    
+    cout << count << endl;
 
-    // while(!fin.eof()){    
-    //     int vertex;
-    //     fin >> vertex;
-    //     idx[count] = vertex;
-    //     count++;
-    // }
-    // count--;    
+    idx = (int*)realloc(idx, sizeof(int)*count);
+    int sol[n_vert] = {0, };
+    for(int i = 0; i < count; i++){
+        int sol_idx = STOC(idx[i]);
+        sol[sol_idx] = 1;
+    }
+    int sol_score = evaluate(sol, n_vert, n_edge, vert_ls, edge_ls);
 
-    // cout << count << endl;
-
-    // idx = (int*)realloc(idx, sizeof(int)*count);
-    // int sol[n_vert] = {0, };
-    // for(int i = 0; i < count; i++){
-    //     int sol_idx = STOC(idx[i]);
-    //     sol[sol_idx] = 1;
-    // }
-    // int sol_score = evaluate(sol, n_vert, n_edge, vert_ls, edge_ls);
-
-    /* int idx_unweighted_50[] = {1 ,4, 5, 6, 8, 10,11, 12, 14, 15, 17, 21, 22, 23, 27, 28, 29, 30, 31, 34, 37, 39, 46, 48, 50};
+    int idx_unweighted_50[] = {1 ,4, 5, 6, 8, 10,11, 12, 14, 15, 17, 21, 22, 23, 27, 28, 29, 30, 31, 34, 37, 39, 46, 48, 50};
     int sol_unweighted_50[50] = {0, };
     for(int i=0; i<sizeof(idx_unweighted_50)/sizeof(*idx_unweighted_50); i++){
         int sol_idx = STOC(idx_unweighted_50[i]);
@@ -299,5 +306,5 @@ int main(int argc, char**argv) {
     }
     int sol_score = evaluate(sol_unweighted_50,n_vert,n_edge,vert_ls,edge_ls);*/
 
-    //cout<<"OPTIMIZED SCORE: "<<sol_score<<endl;
+    // cout<<"OPTIMIZED SCORE: "<<sol_score<<endl;
 }
