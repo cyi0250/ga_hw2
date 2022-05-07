@@ -60,7 +60,8 @@ void mutation(struct EL *el, float r_mutation, int n_bits){
 }
 
 void initialization(struct EL *elem, int n_bits){
-    int *ptr = (int*)malloc(n_bits * sizeof(int));
+    int *ptr = new int[n_bits];
+    //int *ptr = (int*)malloc(n_bits * sizeof(int));
     for (int i = 0; i < n_bits; i++){
         ptr[i] = rand0or1();
     }
@@ -69,7 +70,7 @@ void initialization(struct EL *elem, int n_bits){
 }
 
 
-int evaluate(int*bitstring, int n_bits, int n_edge, struct VERT * l_v, struct EDGE * l_e){
+int evaluate(int*bitstring, int n_bits, int n_edge, struct VERT l_v[], struct EDGE l_e[]){
     int score = 0;
     for(int i=0; i<n_bits; i++){
         l_v[i].vert_grp = bitstring[i];
@@ -81,19 +82,17 @@ int evaluate(int*bitstring, int n_bits, int n_edge, struct VERT * l_v, struct ED
           continue;
         }
         else{
-          if(a_grp > 1 or b_grp > 1)
-              cout<< a_grp << " " << b_grp << endl;
           score = score + l_e[i].w;
         }
     }
     return score;
 }
 
-void evaluate_el(struct EL * el, int n_bits, int n_edge, struct VERT * l_v, struct EDGE * l_e){
+void evaluate_el(struct EL * el, int n_bits, int n_edge, struct VERT l_v[], struct EDGE l_e[]){
     el->score = evaluate(el->bitstring, n_bits, n_edge, l_v, l_e);
 }
 
-void evaluate_all(struct EL * pop, int n_bits, int n_edge, struct VERT * l_v, struct EDGE * l_e, int n_pop){
+void evaluate_all(struct EL * pop, int n_bits, int n_edge, struct VERT l_v[], struct EDGE l_e[], int n_pop){
     for(int i = 0; i <n_pop; i++){
         evaluate_el(&pop[i], n_bits, n_edge, l_v, l_e);
     }
@@ -112,8 +111,10 @@ int select(struct EL * pop, int n_pop, int k){
 }
 
 void crossover(struct EL * p1, struct EL * p2, struct EL * result, float r_cross, int n_bits){
-    int *c1_ptr = (int*)malloc(n_bits * sizeof(int));
-    int *c2_ptr = (int*)malloc(n_bits * sizeof(int));
+    //int *c1_ptr = (int*)malloc(n_bits * sizeof(int));
+    //int *c2_ptr = (int*)malloc(n_bits * sizeof(int));
+    int *c1_ptr = new int[n_bits];
+    int *c2_ptr = new int[n_bits];
     
     for(int i = 0; i < n_bits; i++){
         c1_ptr[i] = p1->bitstring[i];
@@ -153,7 +154,7 @@ float get_average_score(struct EL * pop, int n_pop){
     return float(total_score/n_pop);
 }
 
-struct EL genetic_algorithm(struct VERT * vert_ls, struct EDGE * edge_ls, int n_vert, int n_edge,
+struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_vert, int n_edge,
                             int n_iter, int n_population, float r_cross, float r_mutation, int k){
     time_t start, end;
     struct timeval tv;
@@ -161,7 +162,7 @@ struct EL genetic_algorithm(struct VERT * vert_ls, struct EDGE * edge_ls, int n_
     start = tv.tv_sec;
 
     struct EL * pop;
-    struct EL init [n_population];
+    struct EL * init = new struct EL[n_population];
     pop = init;
     //cout<<"n_pop: "<<n_population<<endl;
     //Initialize population
@@ -177,35 +178,38 @@ struct EL genetic_algorithm(struct VERT * vert_ls, struct EDGE * edge_ls, int n_
             break;
         }
         evaluate_all(pop, n_vert, n_edge, vert_ls, edge_ls, n_population);
-        if(gen%1000==0){
-          int h_idx;
-          h_idx = get_highest_idx(pop,n_population);
-          cout<<"gen: "<<gen<<" score: "<<pop[h_idx].score<<endl;
-          for(int i =0; i<n_vert; i++){
-              cout<<pop[h_idx].bitstring[i];
-          }
-          cout<<endl;
-        }
+        // if(gen%1000==0){
+        //   int h_idx;
+        //   h_idx = get_highest_idx(pop,n_population);
+        //   cout<<"gen: "<<gen<<" score: "<<pop[h_idx].score<<endl;
+        //   for(int i =0; i<n_vert; i++){
+        //       cout<<pop[h_idx].bitstring[i];
+        //   }
+        //   cout<<endl;
+        // }
         //select parents
         int parent_idx[n_population];
-        struct EL children[n_population];
+        struct EL * children = new struct EL[n_population];
         for(int i = 0; i < n_population; i++){
             parent_idx[i] = select(pop,n_population,k);
         }
         //do crossover and mutation
         for(int i = 0; i < n_population; i=i+2){
-            struct EL p1 = pop[parent_idx[i]];
-            struct EL p2 = pop[parent_idx[i+1]];
-            struct EL two_childrens[2];
-            crossover(&p1, &p2, two_childrens, r_cross, n_vert);
+            struct EL *p1 = &pop[parent_idx[i]];
+            struct EL *p2 = &pop[parent_idx[i+1]];
+            //struct EL *two_childrens = new struct EL[2];
+            crossover(p1, p2, &children[i], r_cross, n_vert);
             for(int j = 0; j < 2; j++){
-                mutation(&two_childrens[j],r_mutation,n_vert);
-                children[i+j] = two_childrens[j];
+                mutation(&children[i+j],r_mutation,n_vert);
+                //children[i+j] = two_childrens[j];
             }
+            //delete []two_childrens;
         }
         for(int i =0; i<n_population; i++){
-            free(pop[i].bitstring);
+            delete[](pop[i].bitstring);
+            pop[i].bitstring = NULL;
         }
+        delete[] pop;
         pop = children;
     }
     evaluate_all(pop, n_vert, n_edge, vert_ls, edge_ls, n_population);
@@ -215,28 +219,31 @@ struct EL genetic_algorithm(struct VERT * vert_ls, struct EDGE * edge_ls, int n_
     for(int i =0; i<n_vert; i++){
         cout<<highest_elem->bitstring[i];
     }
+    cout<<endl;
+    for(int i =0; i<n_population; i++){
+        delete[](pop[i].bitstring);
+        pop[i].bitstring = NULL;
+    }
+    delete[] pop;
 }
 
 
 int main(int argc, char**argv) {
     srand(time(NULL));
 
-    //input n, y
     string n_vert_s, n_edge_s;
 
     cin >> n_vert_s;
     cin >> n_edge_s;
-    //
     int n_vert, n_edge;
-    //stringstream ssInt(n_in);
-    //ssInt >> n_vert;
+
     n_vert = stoi(n_vert_s);
     n_edge = stoi(n_edge_s);
 
     int n_bits = n_vert;
-    int n_iter = 5;
-    int n_population = 2;
-    float r_cross = 0.8;
+    int n_iter = 9999999;
+    int n_population = 1000;
+    float r_cross = 0.9;
     float r_mutation = 1 / float(n_bits);
     int k = 4;
 
@@ -257,14 +264,15 @@ int main(int argc, char**argv) {
         edge_ls[i].b = &vert_ls[STOC(stoi(tmp_b))];
         edge_ls[i].w = stoi(tmp_w);
     }
-    //int *c1_ptr = (int*)malloc(n_bits * sizeof(int));
-    //cout<<n_vert<<" "<<n_edge<<endl;
-    //for (int i =0; i<n_edge; i++){
-    //    cout<<edge_ls[i].a->vert_id<<" ";
-    //    cout<<edge_ls[i].b->vert_id<<" ";
-    //    cout<<edge_ls[i].w<<endl;
-    //}
 
-    genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k); 
-
+    genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k);
+    
+    // int idx_unweighted_50[] = {1 ,4, 5, 6, 8, 10,11, 12, 14, 15, 17, 21, 22, 23, 27, 28, 29, 30, 31, 34, 37, 39, 46, 48, 50};
+    // int sol_unweighted_50[50];
+    // for(int i=0; i<sizeof(idx_unweighted_50)/sizeof(*idx_unweighted_50); i++){
+    //     int sol_idx = STOC(idx_unweighted_50[i]);
+    //     sol_unweighted_50[sol_idx] = 1;
+    // }
+    // int sol_score = evaluate(sol_unweighted_50,n_vert,n_edge,vert_ls,edge_ls);
+    // cout<<"OPTIMIZED SCORE: "<<sol_score<<endl;
 }
