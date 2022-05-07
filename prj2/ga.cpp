@@ -218,9 +218,12 @@ struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_
     evaluate_all(pop, n_vert, n_edge, vert_ls, edge_ls, n_population);
     int highest_idx = get_highest_idx(pop, n_population);
     struct EL * highest_elem = &pop[highest_idx];
-    cout<<highest_elem->score<<" ";
+    // cout<<highest_elem->score<<" ";
     for(int i =0; i<n_vert; i++){
-        cout<<highest_elem->bitstring[i];
+        if(highest_elem->bitstring[i] == 1){
+            cout << i << " ";
+        }
+        // cout<<highest_elem->bitstring[i];
     }
     cout<<endl;
 
@@ -275,8 +278,8 @@ int main(int argc, char**argv) {
         edge_ls[i].w = stoi(tmp_w);
     }
 
-    for(int i = 0; i < 30; i++) 
-        genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k, kpoint);
+    // for(int i = 0; i < 30; i++) 
+    genetic_algorithm(vert_ls, edge_ls, n_vert, n_edge, n_iter, n_population, r_cross, r_mutation, k, kpoint);
  
     /*ifstream fin("./proj2_sample_sol/sol_unweighted_50.txt");
 
