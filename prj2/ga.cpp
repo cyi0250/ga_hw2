@@ -173,7 +173,7 @@ struct EL genetic_algorithm(struct VERT vert_ls[], struct EDGE edge_ls[], int n_
     for(int gen = 0; gen<n_iter; gen++){
         gettimeofday(&tv, NULL);
         end = tv.tv_sec;
-        if(end - start >= 29){
+        if(end - start >= 59){
             //cout<<"TIMEOVER"<<endl;
             break;
         }
